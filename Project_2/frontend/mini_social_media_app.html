@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0e0e10;--surface:#18181b;--surface2:#222226;--border:#2e2e34;
+--accent:#a78bfa;--accent2:#f472b6;--text:#f4f4f5;--muted:#71717a;
+--green:#34d399;--red:#f87171;--radius:14px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:600px;display:flex;flex-direction:column}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;height:100%;min-height:600px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.logo{font-family:'Playfair Display',serif;font-size:20px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:7px 14px;border-radius:8px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;transition:.2s}
+.nav-tab.active,.nav-tab:hover{background:var(--surface2);color:var(--text)}
+.current-user{display:flex;align-items:center;gap:8px;cursor:pointer}
+.current-user .ava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid var(--accent)}
+
+/* VIEWS */
+.view{display:none;flex:1;overflow-y:auto}
+.view.active{display:flex}
+.feed-view{flex-direction:column;gap:0;padding:20px;max-width:640px;margin:0 auto;width:100%}
+.profile-view{flex-direction:column}
+.explore-view{flex-direction:column;padding:20px;gap:16px;max-width:640px;margin:0 auto;width:100%}
+
+/* FEED */
+.create-post{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.create-post textarea{width:100%;background:transparent;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;resize:none;outline:none;min-height:60px;line-height:1.6}
+.create-post textarea::placeholder{color:var(--muted)}
+.create-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.post-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s}
+.post-btn:hover{opacity:.9;transform:translateY(-1px)}
+.char-count{font-size:12px;color:var(--muted)}
+
+/* POST CARD */
+.post-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;transition:.2s}
+.post-card:hover{border-color:#444}
+.post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ava{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;cursor:pointer}
+.post-meta{flex:1}
+.post-author{font-size:14px;font-weight:600;cursor:pointer}
+.post-author:hover{color:var(--accent)}
+.post-handle{font-size:12px;color:var(--muted)}
+.post-time{font-size:11px;color:var(--muted)}
+.post-body{font-size:14px;line-height:1.65;color:#d4d4d8;margin-bottom:12px}
+.post-actions{display:flex;gap:16px;padding-top:10px;border-top:1px solid var(--border)}
+.action-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:4px 6px;border-radius:6px;transition:.2s}
+.action-btn:hover{background:var(--surface2)}
+.action-btn.liked{color:var(--red)}
+.action-btn.liked svg{fill:var(--red)}
+.action-btn svg{width:15px;height:15px;transition:.2s}
+.comments-section{margin-top:10px;border-top:1px solid var(--border);padding-top:10px;display:none}
+.comments-section.open{display:block}
+.comment{display:flex;gap:8px;margin-bottom:10px}
+.comment .ava{width:28px;height:28px;font-size:10px}
+.comment-body{flex:1;background:var(--surface2);border-radius:8px;padding:8px 10px}
+.comment-author{font-size:12px;font-weight:600;margin-bottom:2px}
+.comment-text{font-size:13px;color:#a1a1aa;line-height:1.5}
+.comment-input-row{display:flex;gap:8px;margin-top:8px}
+.comment-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none}
+.comment-input:focus{border-color:var(--accent)}
+.comment-submit{background:var(--accent);border:none;color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* PROFILE VIEW */
+.profile-banner{height:120px;background:linear-gradient(135deg,#1e1b4b,#3b0764,#1e1b4b);position:relative}
+.profile-info{padding:0 24px 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.profile-ava-wrap{position:relative;margin-top:-40px;margin-bottom:10px}
+.profile-ava{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;border:4px solid var(--surface)}
+.profile-name{font-size:20px;font-weight:700;margin-bottom:2px}
+.profile-handle{font-size:14px;color:var(--muted);margin-bottom:8px}
+.profile-bio{font-size:14px;color:#a1a1aa;line-height:1.6;margin-bottom:12px}
+.profile-stats{display:flex;gap:20px;margin-bottom:14px}
+.stat{text-align:center}
+.stat-num{font-size:16px;font-weight:700}
+.stat-label{font-size:11px;color:var(--muted)}
+.follow-btn{padding:8px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s;border:1.5px solid var(--accent);color:var(--accent);background:transparent}
+.follow-btn.following{background:var(--surface2);border-color:var(--border);color:var(--muted)}
+.follow-btn:hover{opacity:.8}
+.profile-posts{padding:16px;max-width:640px;margin:0 auto;width:100%}
+
+/* EXPLORE */
+.explore-search{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;width:100%}
+.explore-search:focus{border-color:var(--accent)}
+.users-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.user-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;cursor:pointer;transition:.2s}
+.user-card:hover{border-color:#555;transform:translateY(-2px)}
+.user-card .ava{width:52px;height:52px;font-size:16px}
+.user-card-name{font-size:14px;font-weight:600}
+.user-card-handle{font-size:12px;color:var(--muted)}
+.user-card-bio{font-size:12px;color:#a1a1aa;line-height:1.4}
+.user-card-follow{padding:5px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.2s;border:1.5px solid var(--accent);color:var(--accent);background:transparent}
+.user-card-follow.following{background:var(--surface2);border-color:var(--border);color:var(--muted)}
+
+/* TRENDING */
+.section-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.trend-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.trend-tag{font-size:14px;font-weight:600;color:var(--accent)}
+.trend-count{font-size:12px;color:var(--muted)}
+
+/* AVATAR COLORS */
+.ava-purple{background:#2d1b69;color:#a78bfa}
+.ava-pink{background:#4a1040;color:#f472b6}
+.ava-teal{background:#0c3d38;color:#34d399}
+.ava-amber{background:#3d2200;color:#fbbf24}
+.ava-blue{background:#0c2a4a;color:#60a5fa}
+.ava-coral{background:#3d1a0c;color:#fb923c}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<h2 class="sr-only">Luminary — mini social media app with feed, profiles, likes, comments, and following</h2>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">Luminary</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showView('feed')">Feed</button>
+      <button class="nav-tab" onclick="showView('explore')">Explore</button>
+      <button class="nav-tab" onclick="showMyProfile()">Profile</button>
+    </div>
+    <div class="current-user" onclick="showMyProfile()">
+      <div class="ava ava-purple" id="cur-ava">YO</div>
+    </div>
+  </div>
+
+  <!-- FEED -->
+  <div class="view feed-view active" id="view-feed">
+    <div class="create-post">
+      <textarea id="post-text" placeholder="What's on your mind?" maxlength="280"></textarea>
+      <div class="create-row">
+        <span class="char-count" id="char-count">280</span>
+        <button class="post-btn" onclick="submitPost()">Post</button>
+      </div>
+    </div>
+    <div id="posts-container"></div>
+  </div>
+
+  <!-- EXPLORE -->
+  <div class="view explore-view" id="view-explore">
+    <input class="explore-search" type="text" placeholder="Search people..." oninput="filterUsers(this.value)" id="search-input">
+    <div>
+      <div class="section-title">People to follow</div>
+      <div class="users-grid" id="users-grid"></div>
+    </div>
+    <div>
+      <div class="section-title">Trending topics</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="trends-list"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view profile-view" id="view-profile">
+    <div class="profile-banner"></div>
+    <div class="profile-info">
+      <div class="profile-ava-wrap">
+        <div class="profile-ava" id="pf-ava"></div>
+      </div>
+      <div class="profile-name" id="pf-name"></div>
+      <div class="profile-handle" id="pf-handle"></div>
+      <div class="profile-bio" id="pf-bio"></div>
+      <div class="profile-stats">
+        <div class="stat"><div class="stat-num" id="pf-posts">0</div><div class="stat-label">Posts</div></div>
+        <div class="stat"><div class="stat-num" id="pf-followers">0</div><div class="stat-label">Followers</div></div>
+        <div class="stat"><div class="stat-num" id="pf-following">0</div><div class="stat-label">Following</div></div>
+      </div>
+      <button class="follow-btn" id="pf-follow-btn" style="display:none"></button>
+    </div>
+    <div class="profile-posts" id="profile-posts-container"></div>
+  </div>
+</div>
+
+<script>
+const ME = {id:'me',name:'You',handle:'@you',bio:'Exploring the digital world ✨',avatar:'YO',color:'ava-purple',followers:[],following:[],posts:[]};
+
+const USERS = [
+  {id:'u1',name:'Aria Chen',handle:'@ariachen',bio:'Designer & coffee enthusiast ☕ — building beautiful things',avatar:'AC',color:'ava-pink',followers:['me','u3'],following:['u2','u4'],posts:[]},
+  {id:'u2',name:'Rafe Okafor',handle:'@rafeo',bio:'Full-stack dev | open source | coffee → code',avatar:'RO',color:'ava-teal',followers:['u1'],following:['u1','u3','u5'],posts:[]},
+  {id:'u3',name:'Mia Solano',handle:'@miasolano',bio:'Travel blogger & photographer 📸 | 23 countries so far',avatar:'MS',color:'ava-amber',followers:['u2'],following:['u1'],posts:[]},
+  {id:'u4',name:'James Wren',handle:'@jameswren',bio:'Writing about tech, culture, and the spaces between.',avatar:'JW',color:'ava-blue',followers:[],following:['u2'],posts:[]},
+  {id:'u5',name:'Nadia Frost',handle:'@nadiafrost',bio:'Music producer | synth lover | always in the studio 🎛️',avatar:'NF',color:'ava-coral',followers:['u2'],following:['u3'],posts:[]}
+];
+
+let ALL_USERS = {me:ME, u1:USERS[0], u2:USERS[1], u3:USERS[2], u4:USERS[3], u5:USERS[4]};
+
+const INITIAL_POSTS = [
+  {id:'p1',userId:'u1',text:'Just finished a new icon set — clean, minimal, and full of love. What do you all think makes great UI icons? 🎨',likes:['u2','u3'],comments:[{userId:'u2',text:'Consistency in weight is everything!'},{userId:'u3',text:'Love to see your work!'}],time:'2m ago'},
+  {id:'p2',userId:'u2',text:'Hot take: the best code is the code you delete. Spent today removing 200 lines and the app got faster AND more readable. Feels incredible.',likes:['me','u1','u5'],comments:[{userId:'u1',text:'Absolutely agree. Deletion is an art.'}],time:'18m ago'},
+  {id:'p3',userId:'u3',text:'Woke up to fog over the mountains this morning. No filter, no edits — just this. Some days nature just shows off. 🏔️',likes:['u1','u4'],comments:[],time:'1h ago'},
+  {id:'p4',userId:'u5',text:'New track dropping Friday. This one\'s been three months in the making and I\'m genuinely nervous. First time trying a fully live-instrument arrangement.',likes:['u1','u2','u3','u4'],comments:[{userId:'u4',text:'Can\'t wait — your last one was stunning.'},{userId:'u1',text:'Friday can\'t come soon enough 🎶'}],time:'3h ago'},
+  {id:'p5',userId:'u4',text:'Reading back through my writing from 3 years ago. Strange to see how much the style has shifted. You absorb so much without even noticing.',likes:['u3'],comments:[],time:'5h ago'},
+];
+
+let posts = [];
+
+async function loadPosts() {
+    try {
+        const response = await fetch("http://127.0.0.1:8000/posts/");
+        const data = await response.json();
+
+        posts = data.map(post => ({
+            id: String(post.id),
+            userId: "me",
+            text: post.text,
+            likes: [],
+            comments: [],
+            time: post.time
+        }));
+
+        renderFeed();
+
+    } catch (error) {
+        console.error("Error loading posts:", error);
+    }
+}
+let viewingUserId = null;
+
+function getUserById(id){return ALL_USERS[id]}
+function getUser(id){return ALL_USERS[id]}
+
+function avaHTML(userId,size='',extraClass=''){
+  const u=getUser(userId);
+  if(!u) return '';
+  return `<div class="ava ${u.color} ${extraClass}" style="${size?'width:'+size+'px;height:'+size+'px;font-size:'+(parseInt(size)/3)+'px':''}">${u.avatar}</div>`;
+}
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const tabs={feed:0,explore:1,profile:2};
+  document.querySelectorAll('.nav-tab')[tabs[name]]?.classList.add('active');
+  if(name==='feed') renderFeed();
+  if(name==='explore') renderExplore();
+}
+
+function showMyProfile(){
+  viewingUserId='me';
+  renderProfile('me');
+  showView('profile');
+}
+
+function showProfile(userId){
+  viewingUserId=userId;
+  renderProfile(userId);
+  showView('profile');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+}
+
+function renderProfile(userId){
+  const u=getUser(userId);
+  const el=id=>document.getElementById(id);
+  el('pf-ava').className=`profile-ava ${u.color}`;
+  el('pf-ava').textContent=u.avatar;
+  el('pf-name').textContent=u.name;
+  el('pf-handle').textContent=u.handle;
+  el('pf-bio').textContent=u.bio;
+  const userPosts=posts.filter(p=>p.userId===userId);
+  el('pf-posts').textContent=userPosts.length;
+  el('pf-followers').textContent=u.followers.length;
+  el('pf-following').textContent=u.following.length;
+  const fbtn=el('pf-follow-btn');
+  if(userId==='me'){fbtn.style.display='none'}
+  else{
+    fbtn.style.display='inline-block';
+    const isFollowing=ME.following.includes(userId);
+    fbtn.textContent=isFollowing?'Following':'Follow';
+    fbtn.className='follow-btn'+(isFollowing?' following':'');
+    fbtn.onclick=()=>toggleFollow(userId,true);
+  }
+  const cont=el('profile-posts-container');
+  if(userPosts.length===0){cont.innerHTML='<div class="empty">No posts yet.</div>';return;}
+  cont.innerHTML=userPosts.map(p=>postCardHTML(p)).join('');
+  attachPostListeners(cont);
+}
+
+function postCardHTML(post){
+  const u=getUser(post.userId);
+  if(!u) return '';
+  const liked=post.likes.includes('me');
+  return `<div class="post-card" id="post-${post.id}">
+    <div class="post-header">
+      ${avaHTML(post.userId)}
+      <div class="post-meta">
+        <div class="post-author" data-uid="${post.userId}">${u.name}</div>
+        <div class="post-handle">${u.handle} · <span class="post-time">${post.time}</span></div>
+      </div>
+    </div>
+    <div class="post-body">${escHtml(post.text)}</div>
+    <div class="post-actions">
+      <button class="action-btn ${liked?'liked':''}" data-action="like" data-pid="${post.id}" title="Like">
+        <svg viewBox="0 0 24 24" fill="${liked?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        ${post.likes.length}
+      </button>
+      <button class="action-btn" data-action="comment" data-pid="${post.id}" title="Comment">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ${post.comments.length}
+      </button>
+    </div>
+    <div class="comments-section" id="comments-${post.id}">
+      ${post.comments.map(c=>commentHTML(c)).join('')}
+      <div class="comment-input-row">
+        ${avaHTML('me')}
+        <input class="comment-input" placeholder="Write a comment…" data-pid="${post.id}" type="text" maxlength="200">
+        <button class="comment-submit" data-pid="${post.id}">Send</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function commentHTML(c){
+  const u=getUser(c.userId);
+  if(!u) return '';
+  return `<div class="comment">
+    ${avaHTML(c.userId)}
+    <div class="comment-body">
+      <div class="comment-author">${u.name}</div>
+      <div class="comment-text">${escHtml(c.text)}</div>
+    </div>
+  </div>`;
+}
+
+function attachPostListeners(container){
+  container.querySelectorAll('[data-action="like"]').forEach(btn=>{
+    btn.addEventListener('click',()=>toggleLike(btn.dataset.pid));
+  });
+  container.querySelectorAll('[data-action="comment"]').forEach(btn=>{
+    btn.addEventListener('click',()=>toggleComments(btn.dataset.pid));
+  });
+  container.querySelectorAll('.comment-submit').forEach(btn=>{
+    btn.addEventListener('click',()=>submitComment(btn.dataset.pid));
+  });
+  container.querySelectorAll('.comment-input').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')submitComment(inp.dataset.pid)});
+  });
+  container.querySelectorAll('.post-author,[data-uid]').forEach(el=>{
+    el.addEventListener('click',()=>showProfile(el.dataset.uid));
+  });
+}
+
+function renderFeed(){
+  const cont=document.getElementById('posts-container');
+  if(posts.length===0){cont.innerHTML='<div class="empty">No posts yet. Be the first!</div>';return;}
+  cont.innerHTML=posts.map(p=>postCardHTML(p)).join('');
+  attachPostListeners(cont);
+}
+
+function toggleLike(pid){
+  const p=posts.find(x=>x.id===pid);
+  if(!p) return;
+  const idx=p.likes.indexOf('me');
+  if(idx===-1) p.likes.push('me'); else p.likes.splice(idx,1);
+  rerenderPost(pid);
+}
+
+function toggleComments(pid){
+  const sec=document.getElementById('comments-'+pid);
+  if(sec) sec.classList.toggle('open');
+}
+
+async function submitComment(pid){
+
+    const inp=document.querySelector(
+        `.comment-input[data-pid="${pid}"]`
+    );
+
+    if(!inp || !inp.value.trim()) return;
+
+    await fetch(
+        "http://127.0.0.1:8000/create-comment/",
+        {
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                post_id: pid,
+                text: inp.value
+            })
+        }
+    );
+
+    inp.value="";
+    alert("Comment Saved");
+}
+
+function rerenderPost(pid){
+  const p=posts.find(x=>x.id===pid);
+  if(!p) return;
+  const wasOpen=document.getElementById('comments-'+pid)?.classList.contains('open');
+  const card=document.getElementById('post-'+pid);
+  if(!card) return;
+  const tmp=document.createElement('div');
+  tmp.innerHTML=postCardHTML(p);
+  const newCard=tmp.firstElementChild;
+  card.replaceWith(newCard);
+  attachPostListeners(newCard.parentElement||document);
+  if(wasOpen){const sec=document.getElementById('comments-'+pid);if(sec)sec.classList.add('open');}
+}
+
+async function submitPost() {
+    const ta = document.getElementById('post-text');
+    const text = ta.value.trim();
+
+    if (!text) return;
+
+    try {
+
+        await fetch("http://127.0.0.1:8000/create-post/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                text: text
+            })
+        });
+
+        ta.value = "";
+
+        loadPosts();
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+document.getElementById('post-text').addEventListener('input',function(){
+  document.getElementById('char-count').textContent=280-this.value.length;
+});
+
+function toggleFollow(userId,fromProfile){
+  const u=getUser(userId);
+  const idx=ME.following.indexOf(userId);
+  if(idx===-1){
+    ME.following.push(userId);
+    if(!u.followers.includes('me')) u.followers.push('me');
+  } else {
+    ME.following.splice(idx,1);
+    const fi=u.followers.indexOf('me');
+    if(fi!==-1) u.followers.splice(fi,1);
+  }
+  if(fromProfile) renderProfile(userId);
+  renderExplore();
+}
+
+function renderExplore(){
+  const q=(document.getElementById('search-input')?.value||'').toLowerCase();
+  const grid=document.getElementById('users-grid');
+  const filtered=USERS.filter(u=>!q||(u.name.toLowerCase().includes(q)||u.handle.includes(q)));
+  grid.innerHTML=filtered.length?filtered.map(u=>{
+    const isFollowing=ME.following.includes(u.id);
+    return `<div class="user-card" onclick="showProfile('${u.id}')">
+      <div class="ava ${u.color}" style="width:52px;height:52px;font-size:16px">${u.avatar}</div>
+      <div class="user-card-name">${u.name}</div>
+      <div class="user-card-handle">${u.handle}</div>
+      <div class="user-card-bio">${u.bio}</div>
+      <button class="user-card-follow ${isFollowing?'following':''}" onclick="event.stopPropagation();toggleFollow('${u.id}',false)">${isFollowing?'Following':'Follow'}</button>
+    </div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:14px;grid-column:1/-1;padding:20px 0">No users found.</div>';
+
+  const trends=[
+    {tag:'#DesignSystem',count:'2.1k posts'},
+    {tag:'#OpenSource',count:'5.4k posts'},
+    {tag:'#MusicProduction',count:'890 posts'},
+    {tag:'#TravelPhotography',count:'12k posts'},
+    {tag:'#CleanCode',count:'3.7k posts'},
+  ];
+  document.getElementById('trends-list').innerHTML=trends.map(t=>`
+    <div class="trend-item">
+      <div class="trend-tag">${t.tag}</div>
+      <div class="trend-count">${t.count}</div>
+    </div>`).join('');
+}
+
+function filterUsers(q){renderExplore();}
+
+function escHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadPosts();
+renderExplore();
+</script>
+</body>
+</html>
